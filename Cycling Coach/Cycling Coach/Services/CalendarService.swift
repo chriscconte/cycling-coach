@@ -8,6 +8,7 @@
 import Foundation
 import EventKit
 import SwiftData
+import Combine
 
 struct CalendarConflict {
     let training: Training
@@ -31,7 +32,7 @@ class CalendarService: ObservableObject {
     
     func checkAuthorization() {
         let status = EKEventStore.authorizationStatus(for: .event)
-        isAuthorized = (status == .authorized || status == .fullAccess)
+        isAuthorized = (status == .writeOnly || status == .fullAccess)
     }
     
     func requestAuthorization() async throws {

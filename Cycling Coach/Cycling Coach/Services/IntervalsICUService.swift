@@ -8,6 +8,7 @@
 import Foundation
 import AuthenticationServices
 import SwiftData
+import Combine
 
 // MARK: - Models
 
@@ -265,7 +266,7 @@ class IntervalsICUService: NSObject, ObservableObject {
             title: event.name
         )
         
-        training.description = event.description
+        training.trainingDescription = event.description
         training.plannedDurationMinutes = event.movingTime.map { $0 / 60 }
         training.plannedDistanceKm = event.distance.map { $0 / 1000 }
         training.plannedTSS = event.icuTrainingLoad

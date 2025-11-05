@@ -11,44 +11,39 @@ import SwiftData
 struct GoalsView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var appState: AppState
-    @StateObject private var viewModel: GoalsViewModel
+    @State private var viewModel: GoalsViewModel?
     @State private var showingAddGoal = false
-    
-    init() {
-        _viewModel = StateObject(wrappedValue: GoalsViewModel(
-            modelContext: ModelContext(
-                try! ModelContainer(for: User.self, Training.self, Goal.self, Message.self, ConflictAlert.self)
-            ),
-            userId: UUID()
-        ))
-    }
     
     var body: some View {
         NavigationStack {
-            List {
-                if viewModel.goals.isEmpty {
-                    ContentUnavailableView(
-                        "No Goals Yet",
-                        systemImage: "target",
-                        description: Text("Add your first cycling goal to get started!")
-                    )
-                } else {
-                    ForEach(viewModel.goals) { goal in
-                        GoalRow(goal: goal, viewModel: viewModel)
-                    }
-                    .onDelete(perform: deleteGoals)
-                }
-            }
-            .navigationTitle("Goals")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingAddGoal = true }) {
-                        Image(systemName: "plus")
+            if let viewModel = viewModel {
+                List {
+                    if viewModel.goals.isEmpty {
+                        ContentUnavailableView(
+                            "No Goals Yet",
+                            systemImage: "target",
+                            description: Text("Add your first cycling goal to get started!")
+                        )
+                    } else {
+                        ForEach(viewModel.goals) { goal in
+                            GoalRow(goal: goal, viewModel: viewModel)
+                        }
+                        .onDelete(perform: deleteGoals)
                     }
                 }
-            }
-            .sheet(isPresented: $showingAddGoal) {
-                AddGoalView(viewModel: viewModel)
+                .navigationTitle("Goals")
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: { showingAddGoal = true }) {
+                            Image(systemName: "plus")
+                        }
+                    }
+                }
+                .sheet(isPresented: $showingAddGoal) {
+                    AddGoalView(viewModel: viewModel)
+                }
+            } else {
+                ProgressView("Loading...")
             }
         }
         .onAppear {
@@ -58,11 +53,11 @@ struct GoalsView: View {
     
     private func initializeViewModel() {
         guard let userId = appState.currentUser?.id else { return }
-        let newViewModel = GoalsViewModel(modelContext: modelContext, userId: userId)
-        _viewModel.wrappedValue = newViewModel
+        viewModel = GoalsViewModel(modelContext: modelContext, userId: userId)
     }
     
     private func deleteGoals(at offsets: IndexSet) {
+        guard let viewModel = viewModel else { return }
         for index in offsets {
             let goal = viewModel.goals[index]
             viewModel.deleteGoal(goal)
@@ -81,7 +76,7 @@ struct GoalRow: View {
                     Text(goal.title)
                         .font(.headline)
                     
-                    if let description = goal.description {
+                    if let description = goal.goalDescription {
                         Text(description)
                             .font(.subheadline)
                             .foregroundColor(.secondary)

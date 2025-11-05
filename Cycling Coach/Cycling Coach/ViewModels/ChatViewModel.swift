@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import Combine
 
 @MainActor
 class ChatViewModel: ObservableObject {
@@ -26,9 +27,10 @@ class ChatViewModel: ObservableObject {
     }
     
     func loadMessages() {
+        let currentUserId = userId
         let descriptor = FetchDescriptor<Message>(
             predicate: #Predicate<Message> { message in
-                message.userId == self.userId
+                message.userId == currentUserId
             },
             sortBy: [SortDescriptor(\Message.timestamp, order: .forward)]
         )
@@ -122,10 +124,12 @@ class ChatViewModel: ObservableObject {
     }
     
     private func buildSystemPrompt() async -> String {
+        let currentUserId = userId
+        
         // Fetch user data
         let userDescriptor = FetchDescriptor<User>(
             predicate: #Predicate<User> { user in
-                user.id == self.userId
+                user.id == currentUserId
             }
         )
         
@@ -134,7 +138,7 @@ class ChatViewModel: ObservableObject {
         // Fetch active goals
         let goalsDescriptor = FetchDescriptor<Goal>(
             predicate: #Predicate<Goal> { goal in
-                goal.userId == self.userId && goal.status == "active"
+                goal.userId == currentUserId && goal.status == "active"
             },
             sortBy: [SortDescriptor(\Goal.createdAt, order: .reverse)]
         )
@@ -147,7 +151,7 @@ class ChatViewModel: ObservableObject {
         
         let trainingDescriptor = FetchDescriptor<Training>(
             predicate: #Predicate<Training> { training in
-                training.userId == self.userId && training.date >= sevenDaysAgo
+                training.userId == currentUserId && training.date >= sevenDaysAgo
             },
             sortBy: [SortDescriptor(\Training.date, order: .reverse)]
         )

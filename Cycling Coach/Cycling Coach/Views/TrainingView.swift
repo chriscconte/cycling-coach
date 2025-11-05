@@ -11,61 +11,56 @@ import SwiftData
 struct TrainingView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var appState: AppState
-    @StateObject private var viewModel: TrainingViewModel
+    @State private var viewModel: TrainingViewModel?
     @State private var selectedSegment = 0
-    
-    init() {
-        _viewModel = StateObject(wrappedValue: TrainingViewModel(
-            modelContext: ModelContext(
-                try! ModelContainer(for: User.self, Training.self, Goal.self, Message.self, ConflictAlert.self)
-            ),
-            userId: UUID()
-        ))
-    }
     
     var body: some View {
         NavigationStack {
-            VStack {
-                // Stats summary
-                StatsCard(stats: viewModel.getTrainingStats())
-                    .padding()
-                
-                // Segment control
-                Picker("Filter", selection: $selectedSegment) {
-                    Text("Upcoming").tag(0)
-                    Text("Completed").tag(1)
-                    Text("All").tag(2)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                
-                // Training list
-                List {
-                    ForEach(filteredTrainings) { training in
-                        NavigationLink(destination: TrainingDetailView(training: training, viewModel: viewModel)) {
-                            TrainingRow(training: training)
-                        }
+            if let viewModel = viewModel {
+                VStack {
+                    // Stats summary
+                    StatsCard(stats: viewModel.getTrainingStats())
+                        .padding()
+                    
+                    // Segment control
+                    Picker("Filter", selection: $selectedSegment) {
+                        Text("Upcoming").tag(0)
+                        Text("Completed").tag(1)
+                        Text("All").tag(2)
                     }
-                    .onDelete(perform: deleteTrainings)
-                }
-                .listStyle(.plain)
-            }
-            .navigationTitle("Training")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        Task {
-                            await viewModel.syncAllSources()
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal)
+                    
+                    // Training list
+                    List {
+                        ForEach(filteredTrainings) { training in
+                            NavigationLink(destination: TrainingDetailView(training: training, viewModel: viewModel)) {
+                                TrainingRow(training: training)
+                            }
                         }
-                    }) {
-                        if viewModel.isSyncing {
-                            ProgressView()
-                        } else {
-                            Image(systemName: "arrow.clockwise")
-                        }
+                        .onDelete(perform: deleteTrainings)
                     }
-                    .disabled(viewModel.isSyncing)
+                    .listStyle(.plain)
                 }
+                .navigationTitle("Training")
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: {
+                            Task {
+                                await viewModel.syncAllSources()
+                            }
+                        }) {
+                            if viewModel.isSyncing {
+                                ProgressView()
+                            } else {
+                                Image(systemName: "arrow.clockwise")
+                            }
+                        }
+                        .disabled(viewModel.isSyncing)
+                    }
+                }
+            } else {
+                ProgressView("Loading...")
             }
         }
         .onAppear {
@@ -74,6 +69,7 @@ struct TrainingView: View {
     }
     
     private var filteredTrainings: [Training] {
+        guard let viewModel = viewModel else { return [] }
         switch selectedSegment {
         case 0:
             return viewModel.getUpcomingTrainings()
@@ -86,11 +82,11 @@ struct TrainingView: View {
     
     private func initializeViewModel() {
         guard let userId = appState.currentUser?.id else { return }
-        let newViewModel = TrainingViewModel(modelContext: modelContext, userId: userId)
-        _viewModel.wrappedValue = newViewModel
+        viewModel = TrainingViewModel(modelContext: modelContext, userId: userId)
     }
     
     private func deleteTrainings(at offsets: IndexSet) {
+        guard let viewModel = viewModel else { return }
         for index in offsets {
             let training = filteredTrainings[index]
             viewModel.deleteTraining(training)
@@ -203,7 +199,7 @@ struct TrainingRow: View {
             }
             .foregroundColor(.secondary)
             
-            if let description = training.description {
+            if let description = training.trainingDescription {
                 Text(description)
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -229,7 +225,7 @@ struct TrainingDetailView: View {
                 LabeledContent("Type", value: training.type.capitalized)
                 LabeledContent("Status", value: training.completed ? "Completed" : "Scheduled")
                 
-                if let description = training.description {
+                if let description = training.trainingDescription {
                     LabeledContent("Description", value: description)
                 }
             }

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import Combine
 
 struct OnboardingView: View {
     @Environment(\.modelContext) private var modelContext
@@ -321,8 +322,8 @@ struct PermissionsPage: View {
     @Binding var currentPage: Int
     
     @StateObject private var healthKitService = HealthKitService.shared
-    @StateObject private var calendarService = CalendarService.shared
-    @StateObject private var notificationService = NotificationService.shared
+    @ObservedObject private var calendarService = CalendarService.shared
+    @ObservedObject private var notificationService = NotificationService.shared
     
     var body: some View {
         VStack(spacing: 24) {

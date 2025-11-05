@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import Combine
 
 @MainActor
 class GoalsViewModel: ObservableObject {
@@ -23,9 +24,10 @@ class GoalsViewModel: ObservableObject {
     }
     
     func loadGoals() {
+        let currentUserId = userId
         let descriptor = FetchDescriptor<Goal>(
             predicate: #Predicate<Goal> { goal in
-                goal.userId == self.userId
+                goal.userId == currentUserId
             },
             sortBy: [SortDescriptor(\Goal.createdAt, order: .reverse)]
         )
@@ -41,7 +43,7 @@ class GoalsViewModel: ObservableObject {
     func addGoal(title: String, type: String, targetDate: Date?, description: String?) {
         let goal = Goal(userId: userId, title: title, type: type)
         goal.targetDate = targetDate
-        goal.description = description
+        goal.goalDescription = description
         
         modelContext.insert(goal)
         goals.append(goal)

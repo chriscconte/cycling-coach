@@ -8,6 +8,7 @@
 import Foundation
 import UserNotifications
 import SwiftData
+import Combine
 
 @MainActor
 class NotificationService: NSObject, ObservableObject {
@@ -26,9 +27,7 @@ class NotificationService: NSObject, ObservableObject {
     func checkAuthorization() {
         Task {
             let settings = await notificationCenter.notificationSettings()
-            await MainActor.run {
-                isAuthorized = settings.authorizationStatus == .authorized
-            }
+            isAuthorized = settings.authorizationStatus == .authorized
         }
     }
     
@@ -258,7 +257,8 @@ class NotificationService: NSObject, ObservableObject {
     }
     
     func cancelNotificationsForTraining(trainingId: UUID) {
-        notificationCenter.getPendingNotificationRequests { requests in
+        let center = notificationCenter
+        center.getPendingNotificationRequests { requests in
             let identifiersToRemove = requests.filter { request in
                 if let trainingIdStr = request.content.userInfo["trainingId"] as? String,
                    trainingIdStr == trainingId.uuidString {
@@ -267,7 +267,7 @@ class NotificationService: NSObject, ObservableObject {
                 return false
             }.map { $0.identifier }
             
-            self.notificationCenter.removePendingNotificationRequests(withIdentifiers: identifiersToRemove)
+            center.removePendingNotificationRequests(withIdentifiers: identifiersToRemove)
         }
     }
 }

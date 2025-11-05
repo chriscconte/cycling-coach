@@ -16,7 +16,7 @@ class Training {
     var scheduledDate: Date?
     var type: String // "endurance", "interval", "tempo", "recovery", "race"
     var title: String
-    var description: String?
+    var trainingDescription: String?
     
     // Planned workout details
     var plannedDurationMinutes: Int?

@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import Combine
 
 @MainActor
 class TrainingViewModel: ObservableObject {
@@ -26,9 +27,10 @@ class TrainingViewModel: ObservableObject {
     }
     
     func loadTrainings() {
+        let currentUserId = userId
         let descriptor = FetchDescriptor<Training>(
             predicate: #Predicate<Training> { training in
-                training.userId == self.userId
+                training.userId == currentUserId
             },
             sortBy: [SortDescriptor(\Training.date, order: .reverse)]
         )

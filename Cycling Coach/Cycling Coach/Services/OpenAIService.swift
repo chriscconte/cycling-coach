@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 struct OpenAIChatMessage: Codable {
     let role: String

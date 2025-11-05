@@ -8,6 +8,7 @@
 import Foundation
 import HealthKit
 import SwiftData
+import Combine
 
 @MainActor
 class HealthKitService: ObservableObject {

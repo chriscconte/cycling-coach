@@ -13,7 +13,7 @@ class Goal {
     @Attribute(.unique) var id: UUID
     var userId: UUID
     var title: String
-    var description: String?
+    var goalDescription: String?
     var type: String // "event", "fitness", "distance", "power"
     
     // Goal specifics
